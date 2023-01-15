@@ -1,0 +1,74 @@
+#kidus Berhanu
+import tensorflow as tf
+import cv2
+from imageai.Prediction import ImagePrediction
+import os
+
+def preprocess_image(img_path):
+    """
+    Function to preprocess image
+    :param img_path: path to image
+    :return: preprocessed image
+    """
+    # Load image
+    img = cv2.imread(img_path)
+
+    # Preprocess image
+    img = cv2.resize(img, (224, 224))
+    img = img / 255.0
+
+    return img
+
+def extract_features(img):
+    """
+    Function to extract features from image
+    :param img: preprocessed image
+    :return: features
+    """
+    # Define model
+    model = tf.keras.applications.MobileNetV2(weights='imagenet', include_top=False)
+
+    # Extract features
+    features = model.predict(img[tf.newaxis, ...])
+
+    return features
+
+def object_detection(img):
+    """
+    Function to perform object detection on image
+    :param img: preprocessed image
+    :return: None
+    """
+    class_names = ['background', 'aeroplane', 'bicycle', 'bird', 'boat',
+                   'bottle', 'bus', 'car', 'cat', 'chair', 'cow',
+                   'diningtable', 'dog', 'horse', 'motorbike', 'person',
+                   'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']
+
+    detection_model = tf.keras.applications.mobilenet_v2.MobileNetV2(weights='imagenet', include_top=True)
+    outputs = detection_model(img[tf.newaxis, ...])[0]
+
+    # Get top-k predictions
+    top_k = tf.argsort(outputs, direction='DESCENDING')[:5]
+    for i in range(5):
+        class_name = class_names[top_k[i]]
+        score = outputs[top_k[i]]
+        print("{}: {:.2f}%".format(class_name, score * 100))
+        
+def imageAI_object_detection(img_path):
+    """
+    Function to perform object detection on image using ImageAI
+    :param img_path: path to image
+    :return: None
+    """
+    # Initialize ImageAI
+    prediction = ImagePrediction()
+    prediction.setModelTypeAsResNet()
+    prediction.setModelPath("resnet50_weights_tf_dim_ordering_tf_kernels.h5")
+    prediction.loadModel()
+
+    # Perform object detection
+    predictions, percentage_probabilities = prediction.predictImage(img_path, result_count=5)
+    for index in range(len(predictions)):
+        print(predictions[index] , " : " , percentage_probabilities[index])
+        
+if __name__ == "
